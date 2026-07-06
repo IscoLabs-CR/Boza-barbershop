@@ -1,8 +1,11 @@
-# David Boza Barbería — App de reservas
+# Boza Barbershop — App de reservas
 
 Web app para reservar citas de barbería/salón. Los **clientes agendan sin crear
-cuenta** desde su teléfono; el **barbero/estilista** gestiona su agenda desde un
+cuenta** desde su teléfono; el **barbero** gestiona su agenda desde un
 portal privado.
+
+**Producción:** https://boza-barbershop-isco-labs.vercel.app — desplegada en Vercel
+con auto-deploy: cada `git push` a `main` publica a producción.
 
 Parte de un **SaaS multitenant**: todos los salones comparten una base Supabase
 (`isco-salones`) aislada por RLS. Este despliegue sirve UN salón, identificado por
