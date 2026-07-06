@@ -38,7 +38,7 @@ export default async function Home() {
               </p>
             )}
 
-            <h1 className="mt-3 font-fancy text-6xl font-bold uppercase leading-[1] tracking-tight text-ink sm:text-7xl">
+            <h1 className="mt-3 font-fancy text-[clamp(2.25rem,12vw,4rem)] font-bold uppercase leading-[1.02] tracking-tight text-balance break-words text-ink sm:text-7xl">
               {config.name}
             </h1>
 
