@@ -260,37 +260,24 @@ export default function Wizard({ config }: { config: SalonConfig }) {
 
           {step === 2 && dateStr && (
             <Section title="¿Qué servicio querés?" hint={longDateLabel(dateStr)}>
-              <label className="block">
-                <span className="mb-1.5 block text-sm font-medium text-ink">
-                  Servicio
-                </span>
-                <select
-                  value={service ?? ""}
-                  onChange={(e) => chooseService(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-paper px-4 py-3 text-ink outline-none transition-colors focus:border-brand"
-                >
-                  <option value="" disabled>
-                    Elegí un servicio…
-                  </option>
-                  {config.categories.map((cat) => (
-                    <optgroup key={cat.slug} label={cat.label}>
-                      {servicesByCategory(config, cat.slug).map((s) => (
-                        <option key={s.slug} value={s.slug}>
-                          {s.label} — {priceLabel(s)}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
-              </label>
-
-              {serviceInfo && <ServiceCard service={serviceInfo} />}
+              <div className="grid gap-3 sm:grid-cols-2">
+                {config.categories.map((cat) =>
+                  servicesByCategory(config, cat.slug).map((s) => (
+                    <ServiceCard
+                      key={s.slug}
+                      service={s}
+                      active={service === s.slug}
+                      onSelect={() => chooseService(s.slug)}
+                    />
+                  )),
+                )}
+              </div>
 
               {serviceInfo && (
                 <button
                   type="button"
                   onClick={goToSlots}
-                  className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-brand px-6 py-3.5 font-display font-semibold uppercase tracking-wide text-white transition-colors hover:bg-brand-deep"
+                  className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-brand px-6 py-3.5 font-display font-semibold uppercase tracking-wide text-white transition-colors hover:bg-brand-deep"
                 >
                   Ver horarios
                 </button>
@@ -464,9 +451,27 @@ function Section({
   );
 }
 
-function ServiceCard({ service }: { service: SalonService }) {
+function ServiceCard({
+  service,
+  active,
+  onSelect,
+}: {
+  service: SalonService;
+  active: boolean;
+  onSelect: () => void;
+}) {
   return (
-    <div className="mt-4 rounded-2xl border border-brand/40 bg-brand-tint px-5 py-4">
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={active}
+      className={[
+        "flex h-full flex-col rounded-2xl border px-5 py-4 text-left transition-colors",
+        active
+          ? "border-brand bg-brand-tint ring-1 ring-brand"
+          : "border-line bg-paper hover:border-brand hover:bg-brand-tint",
+      ].join(" ")}
+    >
       <div className="flex items-start justify-between gap-3">
         <span className="font-display text-base font-semibold uppercase tracking-wide text-ink">
           {service.label}
@@ -478,7 +483,7 @@ function ServiceCard({ service }: { service: SalonService }) {
       {service.description && (
         <p className="mt-2 text-sm text-brand-deep">{service.description}</p>
       )}
-    </div>
+    </button>
   );
 }
 
