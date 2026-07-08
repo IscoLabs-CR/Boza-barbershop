@@ -294,6 +294,9 @@ export function weeklyHoursLabel(config: SalonConfig): string[] {
   }
   const lines: string[] = [];
   const closed: number[] = [];
+  // Almuerzos presentes (una etiqueta por franja distinta). Si todos los días
+  // comparten el mismo almuerzo lo mostramos una sola vez en línea aparte.
+  const breaks = new Set<string>();
   for (const g of groups) {
     if (g.hours == null) {
       closed.push(...g.days);
@@ -303,12 +306,12 @@ export function weeklyHoursLabel(config: SalonConfig): string[] {
       g.days.length === 1
         ? WEEKDAYS_SHORT[g.days[0]]
         : `${WEEKDAYS_SHORT[g.days[0]]}–${WEEKDAYS_SHORT[g.days[g.days.length - 1]]}`;
-    let line = `${label} · ${minutesToLabel(g.hours.openMin)} – ${minutesToLabel(g.hours.closeMin)}`;
+    lines.push(`${label} · ${minutesToLabel(g.hours.openMin)} – ${minutesToLabel(g.hours.closeMin)}`);
     if (g.hours.breakStartMin != null && g.hours.breakEndMin != null) {
-      line += ` (almuerzo ${minutesToLabel(g.hours.breakStartMin)}–${minutesToLabel(g.hours.breakEndMin)})`;
+      breaks.add(`${minutesToLabel(g.hours.breakStartMin)}–${minutesToLabel(g.hours.breakEndMin)}`);
     }
-    lines.push(line);
   }
+  for (const b of breaks) lines.push(`Almuerzo ${b}`);
   if (closed.length) lines.push(`Cerrado ${closed.map((d) => WEEKDAYS_SHORT[d]).join(" y ")}`);
   return lines;
 }
