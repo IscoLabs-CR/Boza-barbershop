@@ -132,10 +132,24 @@ export function generateDaySlots(
   const hours = dayHours(config, dateStr);
   if (!hours) return [];
   const dur = service?.durationMin ?? SLOT_STEP_MIN;
+  // Última hora de inicio del día: si el día define `lastStartMin`, el corte puede
+  // empezar hasta esa hora aunque termine después del cierre (p. ej. "última cita 6pm");
+  // si no, se usa la regla clásica de que el corte termine antes del cierre.
+  const lastStart = hours.lastStartMin ?? hours.closeMin - dur;
+  // Franja de descanso (almuerzo): ningún corte puede cruzarla.
+  const hasBreak = hours.breakStartMin != null && hours.breakEndMin != null;
+  const breakStart = hasBreak
+    ? shopInstant(dateStr, hours.breakStartMin!, config.timezone)
+    : null;
+  const breakEnd = hasBreak
+    ? shopInstant(dateStr, hours.breakEndMin!, config.timezone)
+    : null;
   const slots: Slot[] = [];
-  for (let m = hours.openMin; m + dur <= hours.closeMin; m += SLOT_STEP_MIN) {
+  for (let m = hours.openMin; m <= lastStart; m += SLOT_STEP_MIN) {
     const start = shopInstant(dateStr, m, config.timezone);
     const end = new Date(start.getTime() + dur * 60_000);
+    // El corte no puede invadir el descanso (almuerzo): se omite ese espacio.
+    if (breakStart && breakEnd && overlaps(start, end, breakStart, breakEnd)) continue;
     const notPast = start.getTime() > now.getTime();
     const blocked = busy.some(
       (b) => b.kind === "block" && overlaps(start, end, b.start, b.end),
@@ -272,7 +286,9 @@ export function weeklyHoursLabel(config: SalonConfig): string[] {
         (last.hours != null &&
           h != null &&
           last.hours.openMin === h.openMin &&
-          last.hours.closeMin === h.closeMin));
+          last.hours.closeMin === h.closeMin &&
+          (last.hours.breakStartMin ?? null) === (h.breakStartMin ?? null) &&
+          (last.hours.breakEndMin ?? null) === (h.breakEndMin ?? null)));
     if (same) last.days.push(d);
     else groups.push({ days: [d], hours: h });
   }
@@ -287,9 +303,11 @@ export function weeklyHoursLabel(config: SalonConfig): string[] {
       g.days.length === 1
         ? WEEKDAYS_SHORT[g.days[0]]
         : `${WEEKDAYS_SHORT[g.days[0]]}–${WEEKDAYS_SHORT[g.days[g.days.length - 1]]}`;
-    lines.push(
-      `${label} · ${minutesToLabel(g.hours.openMin)} – ${minutesToLabel(g.hours.closeMin)}`,
-    );
+    let line = `${label} · ${minutesToLabel(g.hours.openMin)} – ${minutesToLabel(g.hours.closeMin)}`;
+    if (g.hours.breakStartMin != null && g.hours.breakEndMin != null) {
+      line += ` (almuerzo ${minutesToLabel(g.hours.breakStartMin)}–${minutesToLabel(g.hours.breakEndMin)})`;
+    }
+    lines.push(line);
   }
   if (closed.length) lines.push(`Cerrado ${closed.map((d) => WEEKDAYS_SHORT[d]).join(" y ")}`);
   return lines;

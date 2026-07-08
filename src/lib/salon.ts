@@ -38,6 +38,13 @@ export interface SalonService {
 export interface DayHours {
   openMin: number;
   closeMin: number;
+  // Descanso (almuerzo): ningún corte puede invadir esta franja. null = sin descanso.
+  breakStartMin?: number | null;
+  breakEndMin?: number | null;
+  // Última hora de inicio reservable. Si se define, un corte puede empezar hasta esa
+  // hora aunque termine después del cierre; si es null, se usa la regla clásica
+  // "que el corte termine antes del cierre".
+  lastStartMin?: number | null;
 }
 
 export interface SalonConfig {
@@ -72,13 +79,28 @@ interface RawSalon {
     duration_min: number;
     display_order: number;
   }[];
-  hours: Record<string, { open_min: number; close_min: number }>;
+  hours: Record<
+    string,
+    {
+      open_min: number;
+      close_min: number;
+      break_start_min?: number | null;
+      break_end_min?: number | null;
+      last_start_min?: number | null;
+    }
+  >;
 }
 
 function shape(raw: RawSalon): SalonConfig {
   const hoursByDow: (DayHours | null)[] = Array.from({ length: 7 }, () => null);
   for (const [dow, h] of Object.entries(raw.hours ?? {})) {
-    hoursByDow[Number(dow)] = { openMin: h.open_min, closeMin: h.close_min };
+    hoursByDow[Number(dow)] = {
+      openMin: h.open_min,
+      closeMin: h.close_min,
+      breakStartMin: h.break_start_min ?? null,
+      breakEndMin: h.break_end_min ?? null,
+      lastStartMin: h.last_start_min ?? null,
+    };
   }
   return {
     id: raw.id,
