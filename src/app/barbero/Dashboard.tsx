@@ -26,7 +26,8 @@ import {
   weekRangeLabel,
   dayHours,
   hoursWindow,
-  SLOT_STEP_MIN,
+  firstHourAtOrAfter,
+  SLOT_START_STEP_MIN,
 } from "@/lib/booking";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -1174,24 +1175,27 @@ function BlockModal({
   const win = hoursWindow(config);
   // Horario del día elegido (o la ventana más amplia si cae en un día cerrado).
   const hours = dayHours(config, date) ?? win;
-  const [startMin, setStartMin] = useState(hours.openMin);
-  const [endMin, setEndMin] = useState(hours.openMin + SLOT_STEP_MIN);
+  // Bloques en horas completas: arranca en la primera hora en punto del día.
+  const firstStart = firstHourAtOrAfter(hours.openMin);
+  const [startMin, setStartMin] = useState(firstStart);
+  const [endMin, setEndMin] = useState(firstStart + SLOT_START_STEP_MIN);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   // Al cambiar de día, reencuadrá el rango dentro del horario de ese día.
   function pickDate(d: string) {
     const h = dayHours(config, d) ?? win;
+    const first = firstHourAtOrAfter(h.openMin);
     setDate(d);
-    setStartMin(h.openMin);
-    setEndMin(h.openMin + SLOT_STEP_MIN);
+    setStartMin(first);
+    setEndMin(first + SLOT_START_STEP_MIN);
   }
 
   const startOptions: number[] = [];
-  for (let m = hours.openMin; m <= hours.closeMin - SLOT_STEP_MIN; m += SLOT_STEP_MIN)
+  for (let m = firstStart; m <= hours.closeMin - SLOT_START_STEP_MIN; m += SLOT_START_STEP_MIN)
     startOptions.push(m);
   const endOptions: number[] = [];
-  for (let m = startMin + SLOT_STEP_MIN; m <= hours.closeMin; m += SLOT_STEP_MIN)
+  for (let m = startMin + SLOT_START_STEP_MIN; m <= hours.closeMin; m += SLOT_START_STEP_MIN)
     endOptions.push(m);
 
   async function submit() {
@@ -1238,7 +1242,7 @@ function BlockModal({
               onChange={(e) => {
                 const v = Number(e.target.value);
                 setStartMin(v);
-                if (endMin <= v) setEndMin(v + SLOT_STEP_MIN);
+                if (endMin <= v) setEndMin(v + SLOT_START_STEP_MIN);
               }}
               className="w-full min-w-0 rounded-xl border border-line px-3 py-2.5 font-mono text-ink outline-none focus:border-brand"
             >

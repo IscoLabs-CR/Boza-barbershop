@@ -13,7 +13,13 @@ import type { SalonConfig, SalonService, DayHours } from "@/lib/salon";
  *   - salón:   bloque de 30 min, N por espacio.
  */
 
-export const SLOT_STEP_MIN = 30; // granularidad de la rejilla
+export const SLOT_STEP_MIN = 30; // granularidad base (duraciones / solapes)
+export const SLOT_START_STEP_MIN = 60; // horas en punto: nunca se ofrecen medias horas
+
+/** Primera hora en punto (min desde medianoche) igual o posterior a `min`. */
+export function firstHourAtOrAfter(min: number): number {
+  return Math.ceil(min / 60) * 60;
+}
 
 /* --------------------------------------------------------------- precios */
 
@@ -117,10 +123,10 @@ export function shopInstant(
 }
 
 /**
- * Cada hora de inicio en la rejilla de 30 min dentro del horario. Un espacio está
+ * Cada hora de inicio (solo horas en punto) dentro del horario. Un espacio está
  * disponible si es futuro, no cae en un "block", y tiene menos de
  * maxBookingsPerSlot reservas superpuestas. El fin del espacio usa la DURACIÓN del
- * servicio elegido, así un corte de 60 min ocupa dos casillas de 30.
+ * servicio elegido, así un corte de 60 min ocupa la siguiente hora también.
  */
 export function generateDaySlots(
   config: SalonConfig,
@@ -145,7 +151,9 @@ export function generateDaySlots(
     ? shopInstant(dateStr, hours.breakEndMin!, config.timezone)
     : null;
   const slots: Slot[] = [];
-  for (let m = hours.openMin; m <= lastStart; m += SLOT_STEP_MIN) {
+  // Solo horas en punto: si el salón abre a una media hora, el primer espacio es
+  // la siguiente hora completa.
+  for (let m = firstHourAtOrAfter(hours.openMin); m <= lastStart; m += SLOT_START_STEP_MIN) {
     const start = shopInstant(dateStr, m, config.timezone);
     const end = new Date(start.getTime() + dur * 60_000);
     // El corte no puede invadir el descanso (almuerzo): se omite ese espacio.
