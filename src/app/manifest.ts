@@ -8,8 +8,10 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Boza Barbershop — Reservas",
     short_name: "Boza Barbershop",
     description:
-      "Agenda de citas de Boza Barbershop: recibí un aviso cada vez que entra una reserva.",
-    start_url: "/barbero",
+      "Boza Barbershop: reservá tu cita en segundos, o si sos el barbero, llevá tu agenda.",
+    // Abre en la portada (no en /barbero): así el cliente ve "Reservar cita" y el
+    // barbero entra a su agenda con "Soy Barbero", sin caer en el login.
+    start_url: "/",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
