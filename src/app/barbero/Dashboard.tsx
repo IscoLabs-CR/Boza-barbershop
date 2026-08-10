@@ -27,6 +27,7 @@ import {
   dayHours,
   hoursWindow,
   firstHourAtOrAfter,
+  lastBlockEndMin,
   SLOT_START_STEP_MIN,
 } from "@/lib/booking";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -1216,11 +1217,15 @@ function BlockModal({
     setEndMin(first + SLOT_START_STEP_MIN);
   }
 
+  // Tope del bloqueo: una hora más allá de la última cita del día (p. ej. 19:00
+  // cuando la última cita es a las 18:00), para poder tapar ese último espacio.
+  // Solo se ve acá; la clienta nunca ve esa hora al reservar.
+  const maxEnd = lastBlockEndMin(hours);
   const startOptions: number[] = [];
-  for (let m = firstStart; m <= hours.closeMin - SLOT_START_STEP_MIN; m += SLOT_START_STEP_MIN)
+  for (let m = firstStart; m <= maxEnd - SLOT_START_STEP_MIN; m += SLOT_START_STEP_MIN)
     startOptions.push(m);
   const endOptions: number[] = [];
-  for (let m = startMin + SLOT_START_STEP_MIN; m <= hours.closeMin; m += SLOT_START_STEP_MIN)
+  for (let m = startMin + SLOT_START_STEP_MIN; m <= maxEnd; m += SLOT_START_STEP_MIN)
     endOptions.push(m);
 
   async function submit() {

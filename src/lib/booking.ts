@@ -53,16 +53,30 @@ export function servicesByCategory(
 /** Ventana más amplia de la semana (menor apertura / mayor cierre). Respaldo para
  *  la UI que necesita límites aunque el día caiga cerrado (p. ej. bloquear horario). */
 export function hoursWindow(config: SalonConfig): DayHours {
-  const open = config.hoursByDow
-    .filter((h): h is DayHours => h != null)
-    .map((h) => h.openMin);
-  const close = config.hoursByDow
-    .filter((h): h is DayHours => h != null)
-    .map((h) => h.closeMin);
+  const days = config.hoursByDow.filter((h): h is DayHours => h != null);
+  const open = days.map((h) => h.openMin);
+  const close = days.map((h) => h.closeMin);
+  const lastStart = days
+    .map((h) => h.lastStartMin)
+    .filter((m): m is number => m != null);
   return {
     openMin: open.length ? Math.min(...open) : 480,
     closeMin: close.length ? Math.max(...close) : 1080,
+    lastStartMin: lastStart.length ? Math.max(...lastStart) : null,
   };
+}
+
+/**
+ * Última hora de FIN que el barbero puede bloquear. Cuando el día define
+ * `lastStartMin` la última cita arranca al cierre (p. ej. 18:00 con cierre 18:00),
+ * así que hay que poder bloquear una hora más allá para tapar ese espacio; si no,
+ * el tope es el cierre. SOLO lo usa el panel del barbero: los espacios que ve la
+ * clienta siguen limitados por el horario normal (ver `generateDaySlots`).
+ */
+export function lastBlockEndMin(hours: DayHours): number {
+  const afterLastStart =
+    hours.lastStartMin != null ? hours.lastStartMin + SLOT_START_STEP_MIN : 0;
+  return Math.max(hours.closeMin, afterLastStart);
 }
 
 /* ----------------------------------------------------------------- slots */
